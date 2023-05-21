@@ -1,0 +1,34 @@
+<html>
+<head>
+    <title>
+        Media streaming
+    </title>
+
+    <script src="index.js"></script>
+    <style>
+        button{
+            color: white;
+            background-color: blue;
+            padding: 6px;
+        }
+
+        #preview{
+            border: 5px solid ;
+        }
+        button{
+            margin: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div style="display: block">
+        <video id="preview" width="1280" height="720" autoplay></video>
+
+        <div style="display: flex; width: 1280px;margin-left: auto">
+            <button id="startButton" class="button">Start Recording</button>
+            <button id="stopButton" class="button">Stop Recording</button>
+        </div>
+    </div>
+</body>
+</html>

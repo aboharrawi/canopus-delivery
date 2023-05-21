@@ -4,8 +4,11 @@ spring:
 
 eureka:
   client:
-    registerWithEureka: true
+    registerWithEureka: false
     service-url:
       defaultZone: http://canopus-discovery:8761/eureka
 server:
   port: 8080
+logging:
+  level:
+    root: info
