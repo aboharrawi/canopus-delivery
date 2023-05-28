@@ -23,9 +23,10 @@ public class MediaStreamBinaryWebSocketHandler implements WebSocketHandler {
     public Mono<Void> handle(WebSocketSession session) {
         Path path = Path.of(saveLocation, session.getId());
         return session.receive()
-                //skip any non-binary "🙃" messages
                 .filter(webSocketMessage -> webSocketMessage.getType().equals(WebSocketMessage.Type.BINARY))
-                //possibly use a better streaming logic
-                .flatMap(webSocketMessage -> StreamUtils.write(Mono.just(webSocketMessage.getPayload()), path.resolve(map.compute(session.getId(), (key, count) -> (count == null) ? 0 : count + 1) + ".webm"), null)).then();
+                .map(WebSocketMessage::getPayload)
+                //use a better streaming logic
+                .flatMap(payload -> StreamUtils.append(Mono.just(payload), path.resolve("merge.webm"), null))
+                .then();
     }
 }

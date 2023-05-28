@@ -22,21 +22,26 @@
             () => {
                 navigator.mediaDevices
                     .getDisplayMedia({
-                        audio: true,
+                        audio: {
+                            echoCancellation: true,
+                            suppressLocalAudioPlayback: true,
+                            noiseSuppression: true
+                        },
                         video: {
-                            width: 1280,
-                            height: 720,
+                            aspectRatio: 1.7777777778,
+                            width: {
+                                ideal: 1920
+                            },
+                            height: {
+                                ideal: 1080
+                            },
                             frameRate: {
-                                ideal: 10,
-                                max: 15
-                            }
+                                ideal: 60
+                            },
+                            noiseSuppression: true
                         },
                     })
-                    .then((stream) => {
-                        preview.srcObject = stream;
-                        return new Promise((resolve) => (preview.onplaying = resolve));
-                    })
-                    .then(() => startRecording(preview.captureStream()))
+                    .then((stream) => startRecording(stream))
                     .catch((error) => {
                         log(error);
                     });
@@ -55,9 +60,7 @@
         function startRecording(stream) {
 
             const options = {
-                audioBitsPerSecond: 128000,
-                videoBitsPerSecond: 2500000,
-                mimeType: "video/webm;codecs=vp8",
+                mimeType: "video/webm;codecs=vp9,opus",
             };
 
             const recorder = new MediaRecorder(stream, options);
@@ -65,11 +68,11 @@
             console.log(recorder)
 
             recorder.ondataavailable = (event) => {
-                console.log("Capturing and sending: " + event.data.size )
+                console.log("Capturing and sending: " + event.data.size)
                 conn.send(event.data);
             };
 
-            recorder.start(10000);
+            recorder.start(1000); //5sec
             let stopped = new Promise((resolve, reject) => {
                 recorder.onstop = resolve;
                 recorder.onerror = (event) => reject(event.name);

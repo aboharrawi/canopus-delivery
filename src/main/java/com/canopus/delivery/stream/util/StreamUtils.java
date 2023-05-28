@@ -20,18 +20,19 @@ import java.util.function.Consumer;
 
 public class StreamUtils {
 
-    public static Mono<Void> write(Publisher<DataBuffer> source, Path destination, @Nullable Consumer<DataBuffer> consumer) {
+    public static Mono<Void> append(Publisher<DataBuffer> source, Path destination, @Nullable Consumer<DataBuffer> consumer) {
         Assert.notNull(source, "Source must not be null");
         Assert.notNull(destination, "Destination must not be null");
 
-        Set<OpenOption> optionSet = Set.of(StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        Set<OpenOption> optionSet = Set.of(StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 
         return Mono.create(sink -> {
             try {
+                //todo move out
                 Files.createDirectories(destination.getParent());
                 AsynchronousFileChannel channel = AsynchronousFileChannel.open(destination, optionSet, null);
                 sink.onDispose(() -> closeChannel(channel));
-                DataBufferUtils.write(source, channel)
+                DataBufferUtils.write(source, channel, Files.size(destination))
                         .subscribe(consumer, sink::error, sink::success, Context.of(sink.contextView()));
             } catch (IOException ex) {
                 sink.error(ex);
