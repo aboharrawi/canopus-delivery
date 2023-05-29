@@ -5,7 +5,7 @@ services:
     build: '.'
     ports:
       - "8084:8080"
-      - "5005:5005"
+      - "5007:5007"
     volumes:
       - ~/content:/var/lib/content
     networks:

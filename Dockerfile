@@ -12,4 +12,4 @@ ARG DEPENDENCY=/workspace/app/build/dependency
 COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
 COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
 COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
-ENTRYPOINT ["java","-cp","app:app/lib/*","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","com.canopus.delivery.CanopusDeliveryApplication"]
+ENTRYPOINT ["java","-cp","app:app/lib/*","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","com.canopus.delivery.CanopusDeliveryApplication"]

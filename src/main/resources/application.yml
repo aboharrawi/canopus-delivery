@@ -2,6 +2,11 @@ spring:
   application:
     name: canopus-delivery
 
+  kafka:
+    bootstrap-servers: canopus-kafka:9092
+    producer:
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      batch-size:
 eureka:
   client:
     registerWithEureka: false

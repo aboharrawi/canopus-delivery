@@ -3,7 +3,7 @@
         let preview = document.getElementById("preview");
         let startButton = document.getElementById("startButton");
         let stopButton = document.getElementById("stopButton");
-        const conn = new WebSocket('ws://localhost:8080/live-stream');
+        const conn = new WebSocket('ws://localhost:8084/live-stream');
 
         conn.onopen = function () {
             console.log("Connected to the signaling server");
