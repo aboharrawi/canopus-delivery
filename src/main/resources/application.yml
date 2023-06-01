@@ -5,7 +5,7 @@ spring:
   kafka:
     bootstrap-servers: canopus-kafka:9092
     producer:
-      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       batch-size:
 eureka:
   client:

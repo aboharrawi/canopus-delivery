@@ -7,7 +7,7 @@ services:
       - "8084:8080"
       - "5007:5007"
     volumes:
-      - ~/content:/var/lib/content
+      - ~/canopus/fs_content:/var/lib/content
     networks:
       - canopus
 
