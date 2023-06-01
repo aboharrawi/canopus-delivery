@@ -6,11 +6,52 @@ services:
     ports:
       - "8084:8080"
       - "5007:5007"
+    depends_on:
+      - kafka
     volumes:
       - ~/canopus/fs_content:/var/lib/content
     networks:
       - canopus
 
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: "canopus-kafka"
+    depends_on:
+      - zookeeper
+    ports:
+      - '29092:29092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: canopus-zk:2181
+      KAFKA_ADVERTISED_HOST_NAME: canopus-kafka
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      KAFKA_LISTENERS: EXTERNAL_SAME_HOST://:29092,INTERNAL://:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://canopus-kafka:9092,EXTERNAL_SAME_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL_SAME_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_DIRS: '/tmp/combined-logs'
+
+    volumes:
+      - ~/canopus/kafka/data:/var/lib/kafka/data
+    networks:
+      - canopus
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: "canopus-zk"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    ports:
+      - "2181:2181"
+    networks:
+      - canopus
+    volumes:
+      - ~/canopus/zookeeper:/var/lib/zookeeper
 networks:
   canopus:
     name: canopus
