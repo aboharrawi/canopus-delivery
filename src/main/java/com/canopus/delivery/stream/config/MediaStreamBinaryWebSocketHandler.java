@@ -11,7 +11,6 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 
 
 @Component
@@ -26,11 +25,12 @@ public class MediaStreamBinaryWebSocketHandler implements WebSocketHandler {
     @Override
     @Nonnull
     public Mono<Void> handle(WebSocketSession session) {
-        return session.receive()
-                .filter(webSocketMessage -> webSocketMessage.getType().equals(WebSocketMessage.Type.BINARY))
-                .map(WebSocketMessage::getPayload)
-                .flatMap(dataBuffer -> messageHandler.handleMessage(constructMessage(dataBuffer, session)))
-                .next();
+        return session.send(Mono.just(session.textMessage(session.getId())))
+                .and(session.receive()
+                        .filter(webSocketMessage -> webSocketMessage.getType().equals(WebSocketMessage.Type.BINARY))
+                        .map(WebSocketMessage::getPayload)
+                        .flatMap(dataBuffer -> messageHandler.handleMessage(constructMessage(dataBuffer, session)))
+                        .next());
     }
 
     private Message<DataBuffer> constructMessage(DataBuffer dataBuffer, WebSocketSession session) {

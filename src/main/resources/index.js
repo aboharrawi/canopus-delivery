@@ -4,6 +4,7 @@
         let startButton = document.getElementById("startButton");
         let stopButton = document.getElementById("stopButton");
         const conn = new WebSocket('ws://localhost:8084/live-stream');
+        let sessionId;
 
         conn.onopen = function () {
             console.log("Connected to the signaling server");
@@ -11,6 +12,7 @@
 
         conn.onmessage = function (msg) {
             console.log("Got message", msg.data);
+            sessionId = msg.data;
         };
 
         conn.onerror = function (msg) {
@@ -23,21 +25,17 @@
                 navigator.mediaDevices
                     .getDisplayMedia({
                         audio: {
+                            sampleSize: 16,
+                            channelCount: 2,
                             echoCancellation: true,
                             suppressLocalAudioPlayback: true,
                             noiseSuppression: true
                         },
                         video: {
                             aspectRatio: 1.7777777778,
-                            width: {
-                                ideal: 1920
-                            },
-                            height: {
-                                ideal: 1080
-                            },
-                            frameRate: {
-                                ideal: 60
-                            },
+                            width: 1920,
+                            height: 1080,
+                            frameRate: 60,
                             noiseSuppression: true
                         },
                     })
@@ -61,6 +59,7 @@
 
             const options = {
                 mimeType: "video/webm;codecs=vp9,opus",
+                videoBitsPerSecond: 2500000
             };
 
             const recorder = new MediaRecorder(stream, options);
@@ -78,6 +77,10 @@
                 recorder.onerror = (event) => reject(event.name);
             });
 
+            setTimeout(function () {
+                handleWebStream();
+            }, 2000);
+
             return Promise.resolve(stopped);
         }
 
@@ -87,6 +90,90 @@
 
         function stop(stream) {
             stream.getTracks().forEach((track) => track.stop());
+        }
+
+        function handleWebStream() {
+            var video = document.querySelector('#live-stream');
+            var assetURL = 'http://localhost:8084/stream/' + getSessionId() + '/merge.webm';
+            var mimeCodec = 'video/webm;codecs=vp9,opus';
+            var bytesFetched = 0;
+            var currentSegment = 0;
+            var fileSize = 0;
+
+            var mediaSource = null;
+            if ('MediaSource' in window && MediaSource.isTypeSupported(mimeCodec)) {
+                mediaSource = new MediaSource();
+                video.src = URL.createObjectURL(mediaSource);
+                mediaSource.addEventListener('sourceopen', sourceOpen);
+            } else {
+                console.error('Unsupported MIME type or codec: ', mimeCodec);
+            }
+
+            var sourceBuffer = null;
+
+            function sourceOpen(_) {
+                sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
+                getFileLength(assetURL, function (fileLength) {
+                    fileSize = fileLength;
+                    fetchRange(assetURL, fileLength - (1024 * 512), fileLength - 1, appendSegment);
+                    setInterval(checkBuffer, 2000)
+                    video.addEventListener('canplay', function () {
+                        video.play();
+                    });
+                });
+            }
+
+            function getFileLength(url, cb) {
+                var xhr = new XMLHttpRequest;
+                xhr.open('head', url);
+                xhr.onload = function () {
+                    cb(xhr.getResponseHeader('content-length'));
+                };
+                xhr.send();
+            }
+
+            function fetchRange(url, start, end, cb) {
+                var xhr = new XMLHttpRequest;
+                xhr.open('get', url);
+                xhr.responseType = 'arraybuffer';
+                xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
+                xhr.onload = function () {
+                    bytesFetched += parseInt(xhr.getResponseHeader('content-length'));
+                    currentSegment++;
+                    cb(xhr.response);
+                };
+                xhr.send();
+            }
+
+            function appendSegment(chunk) {
+                sourceBuffer.appendBuffer(chunk);
+            }
+
+            function checkBuffer(_) {
+                var currentSegment = getCurrentSegment();
+                if (shouldFetchNextSegment(currentSegment)) {
+                    fetchNewSegment();
+                }
+            }
+
+            function fetchNewSegment() {
+                getFileLength(assetURL, function (contentLength) {
+                    fileSize = contentLength;
+                    fetchRange(assetURL, bytesFetched, fileSize - 1, appendSegment)
+                })
+            }
+
+            function getCurrentSegment() {
+                return currentSegment;
+            }
+
+            function shouldFetchNextSegment(currentSegment) {
+                return true;
+            }
+        }
+
+        function getSessionId() {
+            return sessionId;
         }
     })
 }());
