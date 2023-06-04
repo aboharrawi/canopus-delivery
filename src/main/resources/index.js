@@ -71,16 +71,11 @@
                 conn.send(event.data);
             };
 
-            recorder.start(1000);
+            recorder.start(2000);
             let stopped = new Promise((resolve, reject) => {
                 recorder.onstop = resolve;
                 recorder.onerror = (event) => reject(event.name);
             });
-
-            setTimeout(function () {
-                handleWebStream();
-            }, 2000);
-
             return Promise.resolve(stopped);
         }
 
@@ -90,84 +85,6 @@
 
         function stop(stream) {
             stream.getTracks().forEach((track) => track.stop());
-        }
-
-        function handleWebStream() {
-            var video = document.querySelector('#live-stream');
-            var assetURL = 'http://localhost:8084/stream/' + getSessionId() + '/merge.webm';
-            var mimeCodec = 'video/webm;codecs=vp9,opus';
-            var bytesFetched = 0;
-            var fileSize = 0;
-
-            var mediaSource = null;
-            if ('MediaSource' in window && MediaSource.isTypeSupported(mimeCodec)) {
-                mediaSource = new MediaSource();
-                video.src = URL.createObjectURL(mediaSource);
-                mediaSource.addEventListener('sourceopen', sourceOpen);
-            } else {
-                console.error('Unsupported MIME type or codec: ', mimeCodec);
-            }
-
-            var sourceBuffer = null;
-
-            function sourceOpen(_) {
-                sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp9,opus");
-                getFileLength(assetURL, function (fileLength) {
-                    fileSize = fileLength;
-                    fetchRange(assetURL, (1024 * 512), fileLength - 1, appendSegment);
-                    setInterval(checkBuffer, 2000);
-                    video.addEventListener('canplay', function () {
-                        video.play();
-                    });
-                });
-            }
-
-            function getFileLength(url, cb) {
-                var xhr = new XMLHttpRequest;
-                xhr.open('head', url);
-                xhr.onload = function () {
-                    cb(xhr.getResponseHeader('content-length'));
-                };
-                xhr.send();
-            }
-
-            function fetchRange(url, start, end, cb) {
-                var xhr = new XMLHttpRequest;
-                xhr.open('get', url);
-                xhr.responseType = 'arraybuffer';
-                xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
-                xhr.onload = function () {
-                    bytesFetched += parseInt(xhr.getResponseHeader('content-length'));
-                    cb(xhr.response);
-                };
-                xhr.send();
-            }
-
-            function appendSegment(chunk) {
-                sourceBuffer.appendBuffer(chunk);
-            }
-
-            function checkBuffer(_) {
-                if (shouldFetchNextSegment()) {
-                    fetchNewSegment();
-                }
-            }
-
-            function fetchNewSegment() {
-                getFileLength(assetURL, function (contentLength) {
-                    fileSize = contentLength;
-                    fetchRange(assetURL, bytesFetched, fileSize - 1, appendSegment);
-                })
-            }
-
-
-            function shouldFetchNextSegment() {
-                return true;
-            }
-        }
-
-        function getSessionId() {
-            return sessionId;
         }
     })
 }());

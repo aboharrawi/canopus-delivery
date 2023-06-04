@@ -4,8 +4,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.MimeType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,6 +66,30 @@ public class StreamEndpoint {
 
         return ResponseEntity.ok()
                 .contentType(MediaTypeFactory.getMediaType(video).orElse(MediaType.APPLICATION_OCTET_STREAM))
+                .cacheControl(CacheControl.noCache())
+                .body(video);
+    }
+
+    @GetMapping("playlist/{sessionId}")
+    @CrossOrigin(methods = {RequestMethod.GET})
+    public ResponseEntity<Resource> indexFile(@PathVariable("sessionId") String sessionId) {
+        UrlResource video;
+        try {
+            logger.info("Resource fetch for playlist, sessionId : " + sessionId);
+            video = new UrlResource("file:/var/lib/content/" + sessionId + "/playlist.m3u8");
+            if (!video.exists()) {
+                logger.error("file:/var/lib/content/" + sessionId + "/playlist.m3u8 was not found");
+                return ResponseEntity.notFound()
+                        .build();
+            }
+        } catch (IOException e) {
+            logger.error(e);
+            return ResponseEntity.badRequest()
+                    .build();
+        }
+
+        return ResponseEntity.ok()
+//                .contentType(MediaType.valueOf("application/vnd.apple.mpegurl"))
                 .cacheControl(CacheControl.noCache())
                 .body(video);
     }
