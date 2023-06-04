@@ -71,7 +71,7 @@
                 conn.send(event.data);
             };
 
-            recorder.start(1000); //5sec
+            recorder.start(1000);
             let stopped = new Promise((resolve, reject) => {
                 recorder.onstop = resolve;
                 recorder.onerror = (event) => reject(event.name);
@@ -97,7 +97,6 @@
             var assetURL = 'http://localhost:8084/stream/' + getSessionId() + '/merge.webm';
             var mimeCodec = 'video/webm;codecs=vp9,opus';
             var bytesFetched = 0;
-            var currentSegment = 0;
             var fileSize = 0;
 
             var mediaSource = null;
@@ -112,11 +111,11 @@
             var sourceBuffer = null;
 
             function sourceOpen(_) {
-                sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
+                sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp9,opus");
                 getFileLength(assetURL, function (fileLength) {
                     fileSize = fileLength;
-                    fetchRange(assetURL, fileLength - (1024 * 512), fileLength - 1, appendSegment);
-                    setInterval(checkBuffer, 2000)
+                    fetchRange(assetURL, (1024 * 512), fileLength - 1, appendSegment);
+                    setInterval(checkBuffer, 2000);
                     video.addEventListener('canplay', function () {
                         video.play();
                     });
@@ -139,7 +138,6 @@
                 xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
                 xhr.onload = function () {
                     bytesFetched += parseInt(xhr.getResponseHeader('content-length'));
-                    currentSegment++;
                     cb(xhr.response);
                 };
                 xhr.send();
@@ -150,8 +148,7 @@
             }
 
             function checkBuffer(_) {
-                var currentSegment = getCurrentSegment();
-                if (shouldFetchNextSegment(currentSegment)) {
+                if (shouldFetchNextSegment()) {
                     fetchNewSegment();
                 }
             }
@@ -159,15 +156,12 @@
             function fetchNewSegment() {
                 getFileLength(assetURL, function (contentLength) {
                     fileSize = contentLength;
-                    fetchRange(assetURL, bytesFetched, fileSize - 1, appendSegment)
+                    fetchRange(assetURL, bytesFetched, fileSize - 1, appendSegment);
                 })
             }
 
-            function getCurrentSegment() {
-                return currentSegment;
-            }
 
-            function shouldFetchNextSegment(currentSegment) {
+            function shouldFetchNextSegment() {
                 return true;
             }
         }

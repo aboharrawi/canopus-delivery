@@ -36,21 +36,21 @@ public class StreamEndpoint {
                     .build();
         }
 
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+        return ResponseEntity.ok()
                 .contentType(MediaTypeFactory.getMediaType(video).orElse(MediaType.APPLICATION_OCTET_STREAM))
                 .cacheControl(CacheControl.noCache())
                 .body(video);
     }
 
-    @GetMapping("stream-fragment/{sessionId}/{id}")
+    @GetMapping("stream-fragment/{sessionId}/{uuid}")
     @CrossOrigin(methods = {RequestMethod.HEAD, RequestMethod.GET})
-    public ResponseEntity<Resource> getVideoPart(@PathVariable("sessionId") String sessionId, @PathVariable("id") String id) {
+    public ResponseEntity<Resource> getVideoPart(@PathVariable("sessionId") String sessionId, @PathVariable("uuid") String uuid) {
         UrlResource video;
         try {
-            logger.info("Resource fetch request with video id : " + id);
-            video = new UrlResource("file:/var/lib/content/" + sessionId + "/" + id);
+            logger.info("Resource fetch request with video id : " + uuid);
+            video = new UrlResource("file:/var/lib/content/" + sessionId + "/" + uuid);
             if (!video.exists()) {
-                logger.error("Video with id: file:/var/lib/content/" + sessionId + "/" + id + " was not found");
+                logger.error("Video with id: file:/var/lib/content/" + sessionId + "/" + uuid + " was not found");
                 return ResponseEntity.notFound()
                         .build();
             }
@@ -60,7 +60,7 @@ public class StreamEndpoint {
                     .build();
         }
 
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+        return ResponseEntity.ok()
                 .contentType(MediaTypeFactory.getMediaType(video).orElse(MediaType.APPLICATION_OCTET_STREAM))
                 .cacheControl(CacheControl.noCache())
                 .body(video);
