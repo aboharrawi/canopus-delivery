@@ -36,7 +36,7 @@
                 } else {
                     clearInterval(intervalId);
                 }
-            }, manifest.segments[0].duration * 900);
+            }, manifest.segments[0].duration * 1000);
         }
 
         function requestPlaylistManifest() {
